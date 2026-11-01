@@ -15,13 +15,14 @@ import './styles/contact.css';
 import './styles/footer.css';
 
 /* ─────────────────────────────────────────────────────────────
-   REVEAL — IntersectionObserver, only runs once on mount
+   REVEAL — IntersectionObserver
 ───────────────────────────────────────────────────────────── */
 function useReveal() {
   useEffect(() => {
-    const observe = () => {
+    const timer = setTimeout(() => {
       const els = document.querySelectorAll<HTMLElement>('.reveal:not(.visible)');
       if (!els.length) return;
+
       const obs = new IntersectionObserver(
         (entries) => {
           entries.forEach(e => {
@@ -31,16 +32,16 @@ function useReveal() {
             }
           });
         },
-        { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+        // rootMargin top large so elements already on screen get activated
+        { threshold: 0.05, rootMargin: '200px 0px -20px 0px' }
       );
-      els.forEach(el => obs.observe(el));
-      return obs;
-    };
 
-    // Small delay so React has finished painting
-    const timer = setTimeout(() => { observe(); }, 100);
+      els.forEach(el => obs.observe(el));
+      return () => obs.disconnect();
+    }, 80);
+
     return () => clearTimeout(timer);
-  }, []); // Only on mount
+  }, []);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -392,7 +393,7 @@ function ServiceCard({ svc, delay }: { svc: Service; delay: number }) {
   const d = Math.min((delay % 3) + 1, 5);
 
   return (
-    <article className={`svc-card reveal reveal-delay-${d}`}>
+    <article className={`svc-card svc-card--enter svc-card--delay-${d}`}>
       <a href={waLink} target="_blank" rel="noopener noreferrer" className="svc-card__img-link">
         <div className="svc-card__img-wrap">
           <img src={svc.image} alt={svc.name} loading="lazy" className="svc-card__img" />
@@ -720,11 +721,6 @@ function ContactSection() {
 function SiteFooter() {
   const year = new Date().getFullYear();
 
-  const handleFooterLink = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    smoothScroll(href);
-  };
-
   return (
     <footer className="footer">
       <div className="footer__top">
@@ -746,58 +742,37 @@ function SiteFooter() {
             <p className="footer__bio">
               Miami's most exclusive luxury spa and wellness destination — where beauty becomes a ritual.
             </p>
-            <div className="footer__socials">
-              <a href={CONFIG.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="footer__social">
-                <IgIcon />
-              </a>
-              <a href={CONFIG.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="footer__social">
-                <FbIcon />
-              </a>
-              <a href={buildWhatsAppGeneral()} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="footer__social footer__social--wa">
-                <WaIcon />
-              </a>
-            </div>
-          </div>
-
-          {/* Explore */}
-          <div className="footer__col">
-            <h4 className="footer__heading">Explore</h4>
-            <nav>
-              {NAV_LINKS.map(l => (
-                <a key={l.href} href={l.href} className="footer__link" onClick={e => handleFooterLink(e, l.href)}>
-                  {l.label}
-                </a>
-              ))}
-            </nav>
-          </div>
-
-          {/* Treatments */}
-          <div className="footer__col">
-            <h4 className="footer__heading">Treatments</h4>
-            <nav>
-              {['Facial Treatments', 'Massage Therapy', 'Body Treatments', 'Beauty Treatments'].map(s => (
-                <a key={s} href="#services" className="footer__link" onClick={e => handleFooterLink(e, '#services')}>
-                  {s}
-                </a>
-              ))}
-            </nav>
           </div>
 
           {/* Contact */}
           <div className="footer__col">
-            <h4 className="footer__heading">Contact</h4>
+            <h4 className="footer__heading">Visit Us</h4>
             <div className="footer__contact">
               <p>📍 {CONFIG.address}<br />{CONFIG.city}</p>
               <p><a href={`tel:${CONFIG.phone}`}>{CONFIG.phone}</a></p>
               <p><a href={`mailto:${CONFIG.email}`}>{CONFIG.email}</a></p>
+
+              {/* Social icons — moved here */}
+              <div className="footer__socials" style={{ marginTop: '1rem' }}>
+                <a href={CONFIG.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="footer__social">
+                  <IgIcon />
+                </a>
+                <a href={CONFIG.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="footer__social">
+                  <FbIcon />
+                </a>
+                <a href={buildWhatsAppGeneral()} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="footer__social footer__social--wa">
+                  <WaIcon />
+                </a>
+              </div>
+
               <a
                 href={buildWhatsAppGeneral()}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-wa btn-sm"
-                style={{ marginTop: '.75rem' }}
+                style={{ marginTop: '1rem' }}
               >
-                📲 WhatsApp
+                📲 Book via WhatsApp
               </a>
             </div>
           </div>
@@ -807,10 +782,6 @@ function SiteFooter() {
       <div className="footer__bottom">
         <div className="wrap footer__bottom-inner">
           <p>© {year} Luxe Beauty Spa. All rights reserved.</p>
-          <div className="footer__bottom-links">
-            <span>Privacy Policy</span>
-            <span>Terms of Service</span>
-          </div>
           <p>Designed &amp; developed by <span style={{ color: 'var(--gold)' }}>Victor Deavila Web Design</span></p>
         </div>
       </div>

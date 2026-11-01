@@ -11,8 +11,9 @@
 }
 .footer__grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 1.3fr;
-  gap: 3rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  max-width: 720px;
 }
 
 /* Brand */
@@ -86,22 +87,11 @@
 .footer__bottom-inner p {
   font-size: .78rem; color: rgba(255,255,255,.32);
 }
-.footer__bottom-links {
-  display: flex; gap: 1.5rem;
-}
-.footer__bottom-links span {
-  font-size: .76rem; color: rgba(255,255,255,.32);
-  cursor: pointer; transition: color .2s;
-}
-.footer__bottom-links span:hover { color: var(--gold); }
 
 @media (max-width: 1024px) {
-  .footer__grid { grid-template-columns: 1fr 1fr; gap: 2.5rem; }
-  .footer__brand { grid-column: 1 / -1; }
+  .footer__grid { max-width: 100%; }
 }
 @media (max-width: 560px) {
-  .footer__grid { grid-template-columns: 1fr; }
-  .footer__brand { grid-column: auto; }
+  .footer__grid { grid-template-columns: 1fr; gap: 2rem; }
   .footer__bottom-inner { flex-direction: column; text-align: center; }
-  .footer__bottom-links { justify-content: center; }
 }
