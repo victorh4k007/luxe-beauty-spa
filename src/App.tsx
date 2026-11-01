@@ -15,33 +15,28 @@ import './styles/contact.css';
 import './styles/footer.css';
 
 /* ─────────────────────────────────────────────────────────────
-   REVEAL — IntersectionObserver
+   REVEAL — observes all .reveal elements, re-checks on every render
 ───────────────────────────────────────────────────────────── */
 function useReveal() {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const els = document.querySelectorAll<HTMLElement>('.reveal:not(.visible)');
-      if (!els.length) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('visible');
+            obs.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.05, rootMargin: '200px 0px 0px 0px' }
+    );
 
-      const obs = new IntersectionObserver(
-        (entries) => {
-          entries.forEach(e => {
-            if (e.isIntersecting) {
-              e.target.classList.add('visible');
-              obs.unobserve(e.target);
-            }
-          });
-        },
-        // rootMargin top large so elements already on screen get activated
-        { threshold: 0.05, rootMargin: '200px 0px -20px 0px' }
-      );
+    // Observe every .reveal that hasn't triggered yet
+    document.querySelectorAll<HTMLElement>('.reveal:not(.visible)')
+      .forEach(el => obs.observe(el));
 
-      els.forEach(el => obs.observe(el));
-      return () => obs.disconnect();
-    }, 80);
-
-    return () => clearTimeout(timer);
-  }, []);
+    return () => obs.disconnect();
+  }); // No deps — runs after every render, picks up new elements
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -283,7 +278,8 @@ function AboutSection() {
               src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=800&q=85"
               alt="Premium facial treatment at Luxe Beauty Spa"
               className="about__img-main"
-              loading="lazy"
+              loading="eager"
+              decoding="async"
             />
           </div>
           <div className="about__img-float">
@@ -292,6 +288,7 @@ function AboutSection() {
               alt="Relaxing hot stone massage"
               className="about__img-small"
               loading="lazy"
+              decoding="async"
             />
           </div>
           <div className="about__award">
@@ -381,7 +378,7 @@ function ServicesSection() {
 
       <div className="wrap services__grid">
         {filtered.map((svc, i) => (
-          <ServiceCard key={svc.id} svc={svc} delay={i} />
+          <ServiceCard key={`${activeFilter}-${svc.id}`} svc={svc} delay={i} />
         ))}
       </div>
     </section>
@@ -391,12 +388,20 @@ function ServicesSection() {
 function ServiceCard({ svc, delay }: { svc: Service; delay: number }) {
   const waLink = buildWhatsAppLink(svc.name, svc.price, svc.duration);
   const d = Math.min((delay % 3) + 1, 5);
+  // First 6 images load eagerly, rest lazy
+  const loadStrategy = delay < 6 ? 'eager' : 'lazy';
 
   return (
     <article className={`svc-card svc-card--enter svc-card--delay-${d}`}>
       <a href={waLink} target="_blank" rel="noopener noreferrer" className="svc-card__img-link">
         <div className="svc-card__img-wrap">
-          <img src={svc.image} alt={svc.name} loading="lazy" className="svc-card__img" />
+          <img
+            src={svc.image}
+            alt={svc.name}
+            loading={loadStrategy}
+            decoding="async"
+            className="svc-card__img"
+          />
           <div className="svc-card__img-overlay" />
           <div className="svc-card__hover-label">Book Now →</div>
         </div>
@@ -484,14 +489,14 @@ function WhyChooseSection() {
    GALLERY
 ───────────────────────────────────────────────────────────── */
 const GALLERY_IMGS = [
-  { url: 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=700&q=85', alt: 'Relaxing massage therapy',   span: 'tall' },
-  { url: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=700&q=85', alt: 'Luxury facial treatment',     span: '' },
-  { url: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=700&q=85', alt: 'Hot stone massage ritual',    span: '' },
-  { url: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=700&q=85', alt: 'Spa treatment room',          span: 'wide' },
-  { url: 'https://images.unsplash.com/photo-1583001930096-2b6e68a4a1b5?w=700&q=85', alt: 'Lash extension artistry',     span: '' },
-  { url: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=700&q=85', alt: '24K gold body treatment',     span: '' },
-  { url: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=700&q=85', alt: 'Luxe spa manicure',           span: '' },
-  { url: 'https://images.unsplash.com/photo-1552693673-1bf958298935?w=700&q=85', alt: 'HydraGlow facial infusion',    span: 'tall' },
+  { url: 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=700&q=85', alt: 'Relaxing massage therapy',   span: 'tall',  eager: true },
+  { url: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=700&q=85', alt: 'Luxury facial treatment',     span: '',      eager: true },
+  { url: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=700&q=85', alt: 'Hot stone massage ritual',    span: '',      eager: true },
+  { url: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=700&q=85', alt: 'Spa treatment room',          span: 'wide',  eager: true },
+  { url: 'https://images.unsplash.com/photo-1583001930096-2b6e68a4a1b5?w=700&q=85', alt: 'Lash extension artistry',     span: '',      eager: false },
+  { url: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=700&q=85', alt: '24K gold body treatment',     span: '',      eager: false },
+  { url: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=700&q=85', alt: 'Luxe spa manicure',           span: '',      eager: false },
+  { url: 'https://images.unsplash.com/photo-1552693673-1bf958298935?w=700&q=85', alt: 'HydraGlow facial infusion',    span: 'tall',  eager: false },
 ];
 
 function GallerySection() {
@@ -523,7 +528,7 @@ function GallerySection() {
             rel="noopener noreferrer"
             className={`gallery__item${img.span === 'tall' ? ' gallery__item--tall' : img.span === 'wide' ? ' gallery__item--wide' : ''}`}
           >
-            <img src={img.url} alt={img.alt} loading="lazy" />
+            <img src={img.url} alt={img.alt} loading={img.eager ? 'eager' : 'lazy'} decoding="async" />
             <div className="gallery__item-hover">
               <span>📸</span>
             </div>
